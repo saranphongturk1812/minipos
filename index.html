@@ -164,7 +164,7 @@ input[type=text],input[type=number]{width:100%;font:inherit;padding:12px;border-
 const $=s=>document.querySelector(s);
 const EMOJIS="🍪 🍫 🍬 🍭 🍩 🧁 🍎 🍌 🍓 🍇 🥛 🧃 🍞 🥕 🍕 🍔 🍦 🧸 🚗 🎈 ⚽ 📚 ✏️ 🎨 🧩 🪀 🪁 🐶 🐱 🌸".split(" ");
 const KEY="minipos.products";
-let products=[];try{products=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){}
+let products=[],firstRun=false;try{const raw=localStorage.getItem(KEY);firstRun=raw===null;products=JSON.parse(raw||"[]")}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(products))}catch(e){alert("พื้นที่เก็บข้อมูลเต็ม ลองใช้อีโมจิแทนรูปถ่าย")}};
 const baht=n=>(Math.round(n*100)/100).toLocaleString("th-TH");
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -329,6 +329,7 @@ const SAMPLES=[
   ["sample07","นมกล่อง","🥛",10],["sample08","น้ำส้ม","🧃",12],["sample09","ไอศกรีม","🍦",25],
   ["sample10","ตุ๊กตาหมี","🧸",50]
 ].map(([id,name,emoji,price])=>({id,name,emoji,price,photo:null}));
+if(firstRun){products=SAMPLES.map(x=>({...x}));save()} /* ใช้ครั้งแรก: ใส่สินค้าตัวอย่างให้เลย */
 $("#btnLoadSamples").onclick=()=>{
   let n=0;SAMPLES.forEach(s=>{if(!products.some(p=>p.id===s.id)){products.push({...s});n++}});
   save();renderList();alert(n?`เพิ่มสินค้าตัวอย่าง ${n} รายการแล้ว`:"มีสินค้าตัวอย่างครบแล้ว");
