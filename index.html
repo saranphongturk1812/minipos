@@ -21,12 +21,14 @@ button.bad{background:var(--bad);color:#fff}
 button.ok{background:var(--ok);color:#fff}
 button:disabled{opacity:.4}
 .card{background:var(--card);border-radius:20px;padding:12px;border:2px solid var(--line)}
-#readerWrap{position:relative;border-radius:20px;overflow:hidden;background:#000;height:220px}
-#reader{width:100%;height:100%}
-#reader video{object-fit:cover}
-#msg{position:absolute;left:8px;right:8px;bottom:8px;padding:8px 12px;border-radius:12px;text-align:center;font-weight:700;display:none;background:rgba(0,0,0,.7);color:#fff}
+#msg{position:fixed;left:16px;right:16px;top:12px;max-width:528px;margin:0 auto;padding:10px 14px;border-radius:14px;text-align:center;font-weight:700;display:none;background:rgba(0,0,0,.8);color:#fff;z-index:9}
 #msg.bad{background:var(--bad)}#msg.ok{background:var(--ok)}
-#camErr{display:none;padding:20px;text-align:center;color:#fff}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pgrid button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border-radius:18px;background:var(--card);border:2px solid var(--line);color:var(--ink);min-width:0}
+.pgrid .pic{width:64px;height:64px;font-size:44px;background:var(--bg)}
+.pgrid .pn{font-size:15px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pgrid .pp{font-size:14px;color:var(--muted);font-weight:600}
+#pairCode{font-size:64px;font-weight:800;letter-spacing:10px;margin:10px 0}
 .line{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
 .line:last-child{border:0}
 .pic{width:54px;height:54px;border-radius:14px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:36px;overflow:hidden;flex:none}
@@ -53,7 +55,6 @@ input[type=text],input[type=number]{width:100%;font:inherit;padding:12px;border-
 .emojis button{font-size:28px;padding:6px;background:var(--card);border:2px solid var(--line)}
 .emojis button.sel{border-color:var(--main-d);background:#ffe9a8}
 .row{display:flex;gap:10px;margin-top:12px}.row>*{flex:1}
-#qrBox{display:flex;justify-content:center;margin:12px 0}
 #vDisplay{max-width:900px;padding-bottom:24px}
 #vDisplay h1{font-size:40px;text-align:center}
 #vDisplay .line{padding:14px 0}
@@ -65,21 +66,7 @@ input[type=text],input[type=number]{width:100%;font:inherit;padding:12px;border-
 .dBig{text-align:center;font-size:48px;font-weight:800;padding:40px 0}
 .dPayRow{display:flex;justify-content:space-between;font-size:34px;font-weight:700;margin:6px 4px}
 #pairBox{text-align:center;margin-top:20px}
-#pairQr{background:#fff;padding:24px;border-radius:16px;width:max-content;margin:10px auto;line-height:0}
-#pairQr img,#pairQr canvas{display:block}
-.lbl .q,#qrBox{background:#fff}
-#qrBox{width:max-content;padding:10px;margin:12px auto}
 #pairBadge{font-size:14px;font-weight:600;color:var(--muted)}
-#printArea{display:none}
-.lbls{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-.lbl{border:1px dashed #888;padding:6px;text-align:center;break-inside:avoid;color:#000}
-.lbl .q{display:flex;justify-content:center}
-.lbl div.t{font-size:12px;margin-top:2px}
-@media print{
-  body{background:#fff}
-  .view,#gear,.bar{display:none!important}
-  #printArea{display:block}
-}
 </style>
 </head>
 <body>
@@ -89,11 +76,8 @@ input[type=text],input[type=number]{width:100%;font:inherit;padding:12px;border-
 <!-- หน้าขาย -->
 <section id="vSell" class="view on">
   <h1>🛒 ไพลินช้อป <small id="pairBadge"></small></h1>
-  <div id="readerWrap">
-    <div id="reader"></div>
-    <div id="camErr"><p>เปิดกล้องไม่ได้ 😢<br>ต้องอนุญาตให้ใช้กล้อง</p><button onclick="startCam()">ลองอีกครั้ง</button></div>
-    <div id="msg"></div>
-  </div>
+  <div id="msg"></div>
+  <div class="pgrid" id="pgrid"></div>
   <div class="card" style="margin-top:12px" id="cart"></div>
   <div class="bar">
     <div><div class="sub">ยอดรวม</div><div class="total" id="sellTotal">0 บาท</div></div>
@@ -117,12 +101,14 @@ input[type=text],input[type=number]{width:100%;font:inherit;padding:12px;border-
 <!-- หน้าจัดการ -->
 <section id="vManage" class="view">
   <h1>⚙️ จัดการสินค้า</h1>
-  <div class="row" style="margin-top:0"><button id="btnAdd">+ เพิ่มสินค้า</button><button class="alt" id="btnPrint">🖨️ พิมพ์ป้าย QR</button></div>
+  <div class="row" style="margin-top:0"><button id="btnAdd">+ เพิ่มสินค้า</button></div>
   <div class="card" style="margin-top:12px" id="plist"></div>
   <h1 style="margin-top:20px">🎁 สินค้าตัวอย่าง</h1>
-  <div class="row" style="margin-top:0"><button class="alt" id="btnLoadSamples">📦 โหลดตัวอย่าง 10 รายการ</button><button class="alt" id="btnPrintSamples">🖨️ พิมพ์ป้ายตัวอย่าง</button></div>
+  <div class="row" style="margin-top:0"><button class="alt" id="btnLoadSamples">📦 โหลดตัวอย่าง 10 รายการ</button></div>
   <h1 style="margin-top:20px">📺 จอลูกค้า (ไอแพด)</h1>
   <div class="row" style="margin-top:0"><button class="alt" id="btnDisplayMode">เปิดเครื่องนี้เป็นจอลูกค้า</button><button class="alt" id="btnUnpair">ตัดการจับคู่</button></div>
+  <label>รหัสจับคู่ (6 หลักที่แสดงบนจอลูกค้า)</label>
+  <div class="row" style="margin-top:0"><input type="number" id="pairInput" inputmode="numeric" placeholder="123456"><button id="btnPair">จับคู่</button></div>
   <div class="row"><button class="alt" id="btnToSell">← กลับหน้าขาย</button></div>
 </section>
 
@@ -137,8 +123,8 @@ input[type=text],input[type=number]{width:100%;font:inherit;padding:12px;border-
   </div>
   <div id="dThanks" class="card" style="display:none"><div class="dBig">ขอบคุณค่ะ/ครับ 🎉</div></div>
   <div id="pairBox" class="card">
-    <div id="dStatus" class="sub">รอจับคู่ — ให้มือถือสแกน QR นี้ที่หน้าขาย</div>
-    <div id="pairQr"></div>
+    <div id="dStatus" class="sub">รอจับคู่ — ใส่รหัสนี้ที่หน้าจัดการในเครื่องขาย</div>
+    <div id="pairCode"></div>
   </div>
 </section>
 
@@ -152,15 +138,10 @@ input[type=text],input[type=number]{width:100%;font:inherit;padding:12px;border-
   <div class="row"><button class="alt" id="btnPhoto">📷 ถ่าย/เลือกรูป</button><button class="alt" id="btnNoPhoto">ใช้อีโมจิ</button></div>
   <input type="file" id="fPhoto" accept="image/*" hidden>
   <div class="row"><div class="pic" id="ePrev" style="width:80px;height:80px;font-size:52px;flex:none"></div></div>
-  <div id="qrBox"></div>
   <div class="row"><button class="alt" id="btnCancel">ยกเลิก</button><button class="ok" id="btnSave">บันทึก</button></div>
   <div class="row"><button class="bad" id="btnDel">ลบสินค้านี้</button></div>
 </section>
 
-<div id="printArea"></div>
-
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <script>
 (function(){
@@ -179,15 +160,20 @@ const beepOk=()=>beep(1200,.12), beepBad=()=>beep(250,.3);
 
 /* หน้า */
 function show(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id===id));$("#gear").style.display=(id==="vSell"||id==="vDisplay")?"flex":"none";window.scrollTo(0,0);
-  if(id==="vSell")startCam();else stopCam();}
+  if(id==="vSell")renderCart();}
 
 /* ตะกร้า */
 let cart=[];
 const total=()=>cart.reduce((s,c)=>{const p=products.find(x=>x.id===c.id);return s+(p?p.price*c.qty:0)},0);
+function renderGrid(){
+  $("#pgrid").innerHTML=products.length?products.map(p=>`<button data-id="${p.id}"><div class="pic">${pic(p)}</div><div class="pn">${esc(p.name)}</div><div class="pp">${baht(p.price)} บาท</div></button>`).join(""):'<div class="empty" style="grid-column:1/-1">ยังไม่มีสินค้า กดค้างที่ ⚙️ เพื่อเพิ่ม</div>';
+}
+$("#pgrid").addEventListener("click",e=>{const b=e.target.closest("button");if(b)addToCart(b.dataset.id)});
 function renderCart(){
+  renderGrid();
   cart=cart.filter(c=>products.some(p=>p.id===c.id));
   const el=$("#cart");
-  if(!cart.length)el.innerHTML='<div class="empty">เอาสินค้ามาสแกนที่กล้องเลย 📷</div>';
+  if(!cart.length)el.innerHTML='<div class="empty">แตะสินค้าด้านบนเพื่อใส่ตะกร้า 👆</div>';
   else el.innerHTML=cart.map(c=>{const p=products.find(x=>x.id===c.id);return `<div class="line"><div class="pic">${pic(p)}</div><div class="grow"><div class="name">${esc(p.name)}</div><div class="sub">${baht(p.price)} บาท</div></div><div class="qty"><button class="alt" data-a="dec" data-id="${c.id}">−</button><b>${c.qty}</b><button data-a="inc" data-id="${c.id}">+</button><button class="bad" data-a="del" data-id="${c.id}">✕</button></div></div>`}).join("");
   $("#sellTotal").textContent=baht(total())+" บาท";
   $("#btnPay").disabled=!cart.length;
@@ -203,37 +189,15 @@ $("#cart").addEventListener("click",e=>{
 });
 $("#btnClear").onclick=()=>{cart=[];renderCart()};
 
-/* กล้อง */
-let scanner=null,cooldown=0,msgT;
+/* ใส่ตะกร้า */
+let msgT;
 function flash(t,cls){const m=$("#msg");m.textContent=t;m.className=cls;m.style.display="block";clearTimeout(msgT);msgT=setTimeout(()=>m.style.display="none",1400)}
-function onScan(text){
-  const now=Date.now();if(now<cooldown)return;
-  cooldown=now+1500;
-  if(text.startsWith("minipos-pair:")){
-    try{localStorage.setItem("minipos.pairId",text.slice(13))}catch(e){}
-    beepOk();flash("จับคู่กับไอแพดแล้ว 📺","ok");connectDisplay();return;
-  }
-  const id=text.startsWith("minipos:")?text.slice(8):null;
-  const p=id&&products.find(x=>x.id===id);
-  if(!p){beepBad();flash("ไม่รู้จักสินค้านี้ 🤔","bad");return}
+function addToCart(id){
+  const p=products.find(x=>x.id===id);if(!p)return;
   const c=cart.find(x=>x.id===id);c?c.qty++:cart.push({id,qty:1});
   beepOk();flash(`${p.emoji&&!p.photo?p.emoji+" ":""}${p.name} ${baht(p.price)} บาท`,"ok");
   renderCart();
 }
-async function startCam(){
-  $("#camErr").style.display="none";
-  if(scanner)return;
-  if(typeof Html5Qrcode==="undefined"){$("#camErr").style.display="block";return}
-  try{
-    scanner=new Html5Qrcode("reader");
-    await scanner.start({facingMode:"environment"},{fps:15,qrbox:{width:200,height:200}},onScan,()=>{});
-  }catch(e){scanner=null;$("#camErr").style.display="block"}
-}
-async function stopCam(){
-  const s=scanner;scanner=null;
-  if(s){try{await s.stop();s.clear()}catch(e){}}
-}
-window.startCam=startCam;
 
 /* จ่ายเงิน */
 let got=0;
@@ -275,8 +239,6 @@ function openEdit(id){
   $("#editTitle").textContent=p?"แก้สินค้า":"เพิ่มสินค้า";
   $("#fName").value=cur.name;$("#fPrice").value=cur.price;
   $("#btnDel").style.display=p?"block":"none";
-  const q=$("#qrBox");q.innerHTML="";
-  if(p&&window.QRCode)new QRCode(q,{text:"minipos:"+cur.id,width:140,height:140});
   prev();show("vEdit");
 }
 $("#emojis").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;cur.emoji=b.dataset.e;cur.photo=null;prev()});
@@ -305,27 +267,11 @@ $("#btnSave").onclick=()=>{
   save();renderList();show("vManage");
 };
 $("#btnDel").onclick=()=>{
-  if(!confirm("ลบ \""+cur.name+"\" ใช่ไหม? ป้าย QR เดิมจะใช้ไม่ได้"))return;
+  if(!confirm("ลบ \""+cur.name+"\" ใช่ไหม?"))return;
   products=products.filter(x=>x.id!==cur.id);save();renderList();show("vManage");
 };
 
-/* พิมพ์ป้าย */
-function printLabels(list){
-  if(!list.length){alert("เพิ่มสินค้าก่อนนะ");return}
-  const pa=$("#printArea");pa.innerHTML='<div class="lbls"></div>';
-  const g=pa.firstChild;
-  list.forEach(p=>{
-    const d=document.createElement("div");d.className="lbl";
-    d.innerHTML='<div class="q"></div><div class="t"></div>';
-    d.lastChild.textContent=`${p.emoji&&!p.photo?p.emoji+" ":""}${p.name} ${baht(p.price)} บาท`;
-    new QRCode(d.firstChild,{text:"minipos:"+p.id,width:90,height:90});
-    g.appendChild(d);
-  });
-  setTimeout(()=>window.print(),300);
-}
-$("#btnPrint").onclick=()=>printLabels(products);
-
-/* สินค้าตัวอย่าง (รหัสคงที่ ป้ายที่พิมพ์ไว้ใช้ได้ทุกเครื่อง) */
+/* สินค้าตัวอย่าง (รหัสคงที่) */
 const SAMPLES=[
   ["sample01","คุกกี้","🍪",10],["sample02","ช็อกโกแลต","🍫",15],["sample03","ลูกอม","🍬",2],
   ["sample04","โดนัท","🍩",20],["sample05","แอปเปิล","🍎",12],["sample06","กล้วย","🍌",5],
@@ -337,7 +283,6 @@ $("#btnLoadSamples").onclick=()=>{
   let n=0;SAMPLES.forEach(s=>{if(!products.some(p=>p.id===s.id)){products.push({...s});n++}});
   save();renderList();alert(n?`เพิ่มสินค้าตัวอย่าง ${n} รายการแล้ว`:"มีสินค้าตัวอย่างครบแล้ว");
 };
-$("#btnPrintSamples").onclick=()=>printLabels(SAMPLES);
 
 /* ส่งข้อมูลไปจอลูกค้า (ไอแพด) ด้วย PeerJS */
 let peer=null,conn=null,stage="shop",retryT;
@@ -368,14 +313,21 @@ $("#btnUnpair").onclick=()=>{
   try{localStorage.removeItem("minipos.pairId")}catch(e){}
   connectDisplay();alert("ตัดการจับคู่แล้ว");
 };
+$("#btnPair").onclick=()=>{
+  const v=$("#pairInput").value.trim();
+  if(!/^\d{6}$/.test(v)){alert("ใส่รหัส 6 หลักที่เห็นบนจอลูกค้า");return}
+  try{localStorage.setItem("minipos.pairId","minipos-"+v)}catch(e){}
+  $("#pairInput").value="";connectDisplay();alert("จับคู่แล้ว");
+};
 $("#btnDisplayMode").onclick=()=>{location.href=location.pathname+"?display"};
 
 /* โหมดจอลูกค้า */
 function initDisplay(){
   show("vDisplay");
   let id;try{id=localStorage.getItem("minipos.displayId")}catch(e){}
-  if(!id){id="minipos-"+Math.random().toString(36).slice(2,12);try{localStorage.setItem("minipos.displayId",id)}catch(e){}}
-  new QRCode($("#pairQr"),{text:"minipos-pair:"+id,width:280,height:280,colorDark:"#000000",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.L});
+  const newId=()=>{const i="minipos-"+String(Math.floor(Math.random()*1e6)).padStart(6,"0");try{localStorage.setItem("minipos.displayId",i)}catch(e){}return i};
+  if(!/^minipos-\d{6}$/.test(id||""))id=newId();
+  $("#pairCode").textContent=id.slice(8);
   let thanksUntil=0,last={lines:[],stage:"shop"},nConn=0;
   const panels=["#dIdle","#dShop","#dThanks"];
   const only=sel=>panels.forEach(p=>$(p).style.display=(p===sel)?"block":"none");
@@ -407,6 +359,7 @@ function initDisplay(){
     });
     pr.on("error",e=>{
       $("#dStatus").textContent="เชื่อมต่อไม่ได้ ("+e.type+") กำลังลองใหม่...";
+      if(e.type==="unavailable-id")newId();
       setTimeout(()=>location.reload(),4000);
     });
   };
@@ -427,7 +380,7 @@ function initDisplay(){
 })();
 
 if(/[?&]display/.test(location.search)){initDisplay()}
-else{renderCart();renderList();startCam();connectDisplay()}
+else{renderCart();renderList();connectDisplay()}
 })();
 </script>
 </body>
